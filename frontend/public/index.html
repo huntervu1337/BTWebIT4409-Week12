@@ -242,13 +242,17 @@
         function SearchBar({ value, onChange }) {
             const [searchInput, setSearchInput] = React.useState(value);
 
+            React.useEffect(() => {
+                setSearchInput(value);
+            }, [value]);
+
             // Debounce logic
             React.useEffect(() => {
                 const timer = setTimeout(() => {
                     onChange(searchInput);
                 }, 300);
                 return () => clearTimeout(timer);
-            }, [searchInput, onChange]);
+            }, [searchInput]);
 
             return (
                 <div className="search-bar">
@@ -438,10 +442,6 @@
                         setTotal(data.total || 0);
                         setTotalPages(data.totalPages || 0);
 
-                        // Fix lỗi nếu đang ở trang 2 mà xoá hết item thì quay về trang 1
-                        if (data.page && data.page !== page) {
-                            setPage(data.page);
-                        }
                     })
                     .catch(err => console.error("Lỗi kết nối Backend:", err));
             };
@@ -463,11 +463,16 @@
                             alert("Lỗi: " + data.error);
                         } else {
                             alert(data.message);
-                            fetchUsers();
+
+                            // Nếu trang hiện tại lớn hơn 1 và trang đó chỉ còn đúng 1 phần tử cuối cùng vừa bị xoá
+                            if (page > 1 && users.length === 1) {
+                                setPage(page - 1); // Lùi về trang trước
+                            } else {
+                                fetchUsers(); // Nếu không thì chỉ cần nạp lại dữ liệu
+                            }
                         }
                     })
                     .catch(err => {
-                        // CATCH LỖI KHI TẮT BACKEND CHO NÚT XÓA
                         alert("Lỗi: Không kết nối được Cơ sở dữ liệu. Máy chủ có thể đang tắt.");
                     });
             };
